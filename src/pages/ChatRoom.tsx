@@ -1,3 +1,46 @@
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MessageList } from '../components/MessageList';
@@ -41,6 +84,24 @@ export function ChatRoom() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
 
   // Initialize username
   React.useEffect(() => {
@@ -135,8 +196,2816 @@ export function ChatRoom() {
         },
         (payload) => {
           const newMessage = payload.new as SupabaseMessage;
-          setMessages((current) => {
-            const newMessages = [...current];
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              });
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const exists = newMessages.some(msg => msg.id === newMessage.id);
+            if (!exists) {
+              newMessages.push({
+                id: newMessage.id,
+                user: newMessage.username,
+                content: newMessage.content,
+                timestamp: new Date(newMessage.created_at).getTime(),
+              } as Message);
+              newMessages.sort((a, b) => a.timestamp - b.timestamp);
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      )
+      .subscribe();
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MessageList } from '../components/MessageList';
+import { ChatInput } from '../components/ChatInput';
+import { getGPTResponse } from '../utils/openRouter';
+import { LogOut, Copy, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { getOrCreateUser } from '../lib/user';
+import { isValidUUID } from '../types';
+import type { Message } from '../types';
+import type { Database } from '../types/supabase';
+
+type SupabaseMessage = Database['public']['Tables']['messages']['Row'];
+
+const MESSAGES_LIMIT = 10;
+const PRESENCE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+
+export function ChatRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [username, setUsername] = React.useState<string>('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [showTimestamps, setShowTimestamps] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const [activeUsers, setActiveUsers] = React.useState<Set<string>>(new Set());
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const presenceInterval = React.useRef<number>();
+
+  // Validate UUID format
+  React.useEffect(() => {
+    if (!roomId || !isValidUUID(roomId)) {
+      console.error('Invalid room ID format');
+      navigate('/');
+      return;
+    }
+  }, [roomId, navigate]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room:${roomId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+          scrollToBottom(); // if you have this already set up
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomId]);
+
+  // Initialize username
+  React.useEffect(() => {
+    getOrCreateUser()
+      .then(username => {
+        setUsername(username);
+        setActiveUsers(new Set([username]));
+      })
+      .catch(error => {
+        console.error('Error getting username:', error);
+        setError('Failed to initialize user. Please refresh the page.');
+      });
+  }, []);
+
+  React.useEffect(() => {
+    if (!roomId || !username || !isValidUUID(roomId)) {
+      return;
+    }
+
+    const updatePresence = async () => {
+      try {
+        const presenceId = crypto.randomUUID();
+        await supabase.from('presence').upsert({
+          id: presenceId,
+          room_id: roomId,
+          username,
+          last_seen: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error updating presence:', error);
+      }
+    };
+
+    const fetchActiveUsers = async () => {
+      try {
+        const { data } = await supabase
+          .from('presence')
+          .select('username')
+          .eq('room_id', roomId)
+          .gte('last_seen', new Date(Date.now() - PRESENCE_TIMEOUT).toISOString());
+
+        if (data) {
+          setActiveUsers(new Set([...data.map(u => u.username), username]));
+        }
+      } catch (error) {
+        console.error('Error fetching active users:', error);
+      }
+    };
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        const formattedMessages: Message[] = (data || []).map((msg: SupabaseMessage) => ({
+          id: msg.id,
+          user: msg.username,
+          content: msg.content,
+          timestamp: new Date(msg.created_at).getTime(),
+        }));
+
+        setMessages(formattedMessages);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setError('Failed to load messages. Please refresh the page.');
+      }
+    };
+
+    // Initialize
+    updatePresence();
+    fetchActiveUsers();
+    fetchMessages();
+
+    // Set up real-time subscriptions
+    const messageChannel = supabase.channel('messages');
+    const presenceChannel = supabase.channel('presence');
+
+    messageChannel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as SupabaseMessage;
+          setMessages((prev) => {
+            const newMessages = [...prev];
             const exists = newMessages.some(msg => msg.id === newMessage.id);
             if (!exists) {
               newMessages.push({

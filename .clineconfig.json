@@ -1,0 +1,15 @@
+{
+  "onCommit": {
+    "description": "Summarize staged changes in plain English and suggest a commit message",
+    "actions": [
+      {
+        "type": "runScript",
+        "script": "scripts/clean-code.js"
+      },
+      {
+        "type": "askAI",
+        "prompt": "Review the staged changes and generate a one-line summary and a commit message."
+      }
+    ]
+  }
+}
