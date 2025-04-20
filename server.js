@@ -1,8 +1,8 @@
-const WebSocket = require('ws');
-const http = require('http');
+import { WebSocketServer } from 'ws';
+import http from 'http';
 
 const server = http.createServer();
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 
 wss.on('connection', function connection(ws) {
   console.log('A new client connected');
@@ -12,7 +12,7 @@ wss.on('connection', function connection(ws) {
 
     // Echo the message to all connected clients
     wss.clients.forEach(function each(client) {
-      if (client.readyState === WebSocket.OPEN) {
+      if (client.readyState === ws.OPEN) {
         client.send(message);
       }
     });
