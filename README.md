@@ -51,6 +51,14 @@ npm run dev
 - Groq API for AI responses
 - Tailwind CSS for styling
 - Perfect Freehand for whiteboard drawing
+- 
+## 🧠 Project History
+
+HiveMind is being built in public, step-by-step.
+
+You can read the live progress, key decisions, and build journey [here](https://chatgpt.com/share/68051105-4c8c-8000-88d8-9f931d52bf8e).
+
+Want to get involved? Fork the repo, submit a pull request, or open an Issue!
 
 ## Contributing
 
