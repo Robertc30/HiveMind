@@ -2,6 +2,15 @@
 
 HiveMind is a real-time collaborative chat platform that enables teams to brainstorm and develop ideas together with the help of AI. Each user can connect with their own API key, ensuring privacy and control over their AI usage.
 
+## 🧠 Join the Brainstorm
+
+I'm building HiveMind step-by-step in public — and you’re invited to be part of it.
+
+If you want to help me brainstorm, shape ideas, or just see exactly where I'm at in the process,  
+[**click here to view the live build journey**](https://chatgpt.com/share/68051105-4c8c-8000-88d8-9f931d52bf8e).
+
+Every insight, idea, or contribution helps move HiveMind forward.  
+Let's build something incredible together. 🚀
 ![HiveMind Screenshot](https://images.pexels.com/photos/7014766/pexels-photo-7014766.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2)
 
 ## Features
