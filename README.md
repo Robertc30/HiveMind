@@ -99,3 +99,10 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 📺 Follow the Journey
+
+Want to see more behind-the-scenes progress?  
+Check out the [HiveMind Build Journey on YouTube](https://youtu.be/AqMW-2QUAWM)!
