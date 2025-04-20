@@ -7,7 +7,7 @@ HiveMind is a real-time collaborative chat platform that enables teams to brains
 I'm building HiveMind step-by-step in public — and you’re invited to be part of it.
 
 If you want to help me brainstorm, shape ideas, or just see exactly where I'm at in the process,  
-[**click here to view the live build journey**](https://chatgpt.com/share/68051105-4c8c-8000-88d8-9f931d52bf8e).
+[**click here to view the live build journey**](https://chatgpt.com/share/6804e6f6-8984-8000-a3c6-2376d897b35b)
 
 Every insight, idea, or contribution helps move HiveMind forward.  
 Let's build something incredible together. 🚀
