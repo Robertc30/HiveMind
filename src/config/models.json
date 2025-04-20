@@ -1,0 +1,21 @@
+{
+  "providers": [
+    {
+      "name": "Groq",
+      "models": [
+        {
+          "id": "llama-3.3-70b-versatile",
+          "name": "LLaMA 3 70B",
+          "description": "Latest LLaMA model, best for general use",
+          "maxTokens": 32768
+        },
+        {
+          "id": "mixtral-8x7b-32768",
+          "name": "Mixtral 8x7B",
+          "description": "Efficient model with strong performance",
+          "maxTokens": 32768
+        }
+      ]
+    }
+  ]
+}
