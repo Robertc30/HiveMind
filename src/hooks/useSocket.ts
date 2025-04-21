@@ -16,12 +16,11 @@ export const useSocket = () => {
   const maxReconnectAttempts = 5;
 
   useEffect(() => {
-    const socket = io(SERVER_URL, {
+    const socket = io(import.meta.env.VITE_SERVER_URL, {
       reconnection: true,
-      reconnectionAttempts: maxReconnectAttempts,
-      reconnectionDelay: 1000,
-      timeout: 10000
+      transports: ["websocket"],
     });
+    
     socketRef.current = socket;
 
     socket.on('connect', () => {
