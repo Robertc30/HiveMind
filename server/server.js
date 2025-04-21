@@ -1,31 +1,32 @@
-import { WebSocketServer } from 'ws';
-import http from 'http';
 import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 
 const app = express();
-const server = http.createServer(app); // Create a raw HTTP server
-const wss = new WebSocketServer({ server }); // Attach WS server to the HTTP server
+const server = http.createServer(app);
 
-wss.on('connection', (socket) => {
-  console.log('Client connected via WebSocket');
+// Set up Socket.IO server
+const io = new Server(server, {
+  cors: {
+    origin: '*', // Allow all for now (you can lock it down later)
+    methods: ['GET', 'POST'],
+  }
+});
 
-  socket.on('message', (message) => {
-    console.log(`Received: ${message}`);
-    // Broadcast to all clients
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('message', (data) => {
+    console.log('Received message:', data);
+    socket.broadcast.emit('message', data); // Broadcast to everyone else
   });
 
-  socket.on('close', () => {
-    console.log('Client disconnected');
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
   });
 });
 
-// Must listen like this
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => {
-  console.log(`HiveMind WebSocket server listening on port ${PORT}`);
+  console.log(`Socket.IO server running on port ${PORT}`);
 });
