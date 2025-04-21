@@ -33,7 +33,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, users, currentUser }
             <BrainCircuit size={18} className="text-white" />
           ) : (
             <span className="text-sm font-medium" style={{ color: messageSender.color }}>
-              {messageSender.name.substring(0, 2).toUpperCase()}
+              {(messageSender.name || "").substring(0, 2).toUpperCase()}
             </span>
           )}
         </div>

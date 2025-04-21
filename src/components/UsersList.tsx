@@ -34,7 +34,7 @@ const UsersList: React.FC<UsersListProps> = ({ users, currentUser }) => {
                   style={{ borderColor: user.color }}
                 >
                   <span className="text-sm font-medium" style={{ color: user.color }}>
-                    {user.name.substring(0, 2).toUpperCase()}
+                    {(user.name || "").substring(0, 2).toUpperCase()}
                   </span>
                 </div>
                 <div>

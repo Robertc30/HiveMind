@@ -45,7 +45,7 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ typingUsers, users, i
             className="text-xs font-medium"
             style={{ color: typingUserObjects[0]?.color || '#64748B' }}
           >
-            {typingUserObjects[0]?.name.substring(0, 2).toUpperCase() || '?'}
+            {(typingUserObjects[0]?.name || "").substring(0, 2).toUpperCase() || '?'}
           </span>
         </div>
       )}
