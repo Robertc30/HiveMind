@@ -1,33 +1,31 @@
-import { createServer } from "http";
-import { Server } from "socket.io";
-import express from "express";
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 const app = express();
-const httpServer = createServer(app);
-
-// Create a Socket.IO server
-const io = new Server(httpServer, {
+const server = createServer(app);
+const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: '*', // Open it for now to any frontend (Vercel)
+    methods: ['GET', 'POST']
   }
 });
 
-io.on("connection", (socket) => {
-  console.log("a user connected");
+io.on('connection', (socket) => {
+  console.log('A user connected');
 
-  socket.on("message", (msg) => {
-    console.log("message received: ", msg);
-    // Broadcast the message to all clients
-    io.emit("message", msg);
+  socket.on('message', (data) => {
+    console.log('Received message:', data);
+    // Broadcast the message to everyone except sender
+    socket.broadcast.emit('message', data);
   });
 
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
   });
 });
 
 const PORT = process.env.PORT || 10000;
-httpServer.listen(PORT, () => {
-  console.log(`Socket.IO server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`✅ HiveMind WebSocket server listening on port ${PORT}`);
 });
