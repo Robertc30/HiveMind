@@ -1,32 +1,33 @@
-import express from 'express';
-import http from 'http';
-import { Server } from 'socket.io';
+import { createServer } from "http";
+import { Server } from "socket.io";
+import express from "express";
 
 const app = express();
-const server = http.createServer(app);
+const httpServer = createServer(app);
 
-// Set up Socket.IO server
-const io = new Server(server, {
+// Create a Socket.IO server
+const io = new Server(httpServer, {
   cors: {
-    origin: '*', // Allow all for now (you can lock it down later)
-    methods: ['GET', 'POST'],
+    origin: "*",
+    methods: ["GET", "POST"]
   }
 });
 
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+io.on("connection", (socket) => {
+  console.log("a user connected");
 
-  socket.on('message', (data) => {
-    console.log('Received message:', data);
-    socket.broadcast.emit('message', data); // Broadcast to everyone else
+  socket.on("message", (msg) => {
+    console.log("message received: ", msg);
+    // Broadcast the message to all clients
+    io.emit("message", msg);
   });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
   });
 });
 
 const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
 });
