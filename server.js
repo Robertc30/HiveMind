@@ -1,27 +1,37 @@
-import { WebSocketServer } from 'ws';
-import http from 'http';
+import { createServer } from "http";
+import { Server } from "socket.io";
+import express from "express";
 
-const server = http.createServer();
-const wss = new WebSocketServer({ server });
+const app = express();
+const httpServer = createServer(app);
 
-wss.on('connection', function connection(ws) {
-  console.log('A new client connected');
-  
-  ws.on('message', function incoming(message) {
-    console.log('received: %s', message);
-
-    // Echo the message to all connected clients
-    wss.clients.forEach(function each(client) {
-      if (client.readyState === ws.OPEN) {
-        client.send(message);
-      }
-    });
-  });
-
-  ws.send('Welcome to HiveMind!');
+// Serve a simple homepage so Render doesn't think it's broken
+app.get("/", (req, res) => {
+  res.send("HiveMind backend server is alive 🚀");
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, function() {
-  console.log(`HiveMind WebSocket server is listening on port ${PORT}`);
+// Create a Socket.IO server
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("a user connected");
+
+  socket.on("message", (msg) => {
+    console.log("message received: ", msg);
+    io.emit("message", msg); // broadcast
+  });
+
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+  });
+});
+
+const PORT = process.env.PORT || 10000;
+httpServer.listen(PORT, () => {
+  console.log(`Socket.IO server running on port ${PORT}`);
 });
