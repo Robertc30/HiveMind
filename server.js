@@ -1,9 +1,10 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
 import express from "express";
-const cors = require('cors');
-const axios = require('axios');
-require('dotenv').config();
+import cors from 'cors';
+import axios from 'axios';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 app.use(cors());
