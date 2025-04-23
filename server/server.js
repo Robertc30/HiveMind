@@ -19,7 +19,8 @@ const io = new Server(httpServer, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  }
+  },
+  path: '/socket.io',
 });
 
 io.on("connection", (socket) => {
