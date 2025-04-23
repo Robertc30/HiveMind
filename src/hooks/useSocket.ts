@@ -17,8 +17,9 @@ export const useSocket = () => {
 
   useEffect(() => {
     const socket = io(import.meta.env.VITE_SERVER_URL, {
-      reconnection: true,
+      path: "/socket.io",
       transports: ["websocket"],
+      reconnection: true,
     });
     
     socketRef.current = socket;
