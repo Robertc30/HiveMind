@@ -6,8 +6,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, { cors: { origin: "*" } });
 
 app.get("/health", (_, res) => res.send("HiveMind backend is running"));
 
@@ -23,6 +23,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(process.env.PORT || 10000, () => {
-  console.log('listening on *:10000');
+httpServer.listen(process.env.PORT || 10000, "0.0.0.0", () => {
+  console.log(`Server running on port ${process.env.PORT || 10000}`);
 });
