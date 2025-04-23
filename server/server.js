@@ -1,28 +1,57 @@
-import http from 'http';
-import express from 'express';
+import express from "express";
+import { createServer } from "http";
 import { Server } from "socket.io";
-import dotenv from 'dotenv';
+import cors from "cors";
+import dotenv from "dotenv";
+import axios from "axios";
 
 dotenv.config();
 
 const app = express();
-const httpServer = http.createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*" } });
+app.use(cors());
+app.use(express.json());
 
-app.get("/health", (_, res) => res.send("HiveMind backend is running"));
+app.get("/health", (_, res) => res.send("HiveMind backend OK 🚀"));
 
-io.on('connection', (socket) => {
-  console.log('a user connected');
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+io.on("connection", (socket) => {
+  console.log("🟢 New client:", socket.id);
+
+  socket.on("user_message", async (msg) => {
+    try {
+      const response = await axios.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          model: "llama3-8b-8192",
+          messages: [{ role: "user", content: msg }]
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      socket.emit("ai_message", { text: response.data.choices[0].message.content });
+    } catch (err) {
+      console.error("Groq error:", err.message);
+      socket.emit("ai_message", { text: "Error from AI." });
+    }
   });
 
-  socket.on('chat message', (msg) => {
-    io.emit('chat message', msg);
+  socket.on("disconnect", () => {
+    console.log("🔴 Disconnected:", socket.id);
   });
 });
 
-httpServer.listen(process.env.PORT || 10000, "0.0.0.0", () => {
-  console.log(`Server running on port ${process.env.PORT || 10000}`);
+const PORT = process.env.PORT || 10000;
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ Server listening on http://0.0.0.0:${PORT}`);
 });
