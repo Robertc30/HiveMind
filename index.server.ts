@@ -1,46 +1,35 @@
-import express from 'express';
-import { createServer as createViteServer } from 'vite';
-import http from 'http';
-import { Server } from 'socket.io';
-import cors from 'cors';
-import path from 'path';
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const cors = require("cors");
+const { Server } = require("socket.io");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const httpServer = http.createServer(app);
 
-async function startServer() {
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: 'custom',
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  },
+  path: "/socket.io",
+  transports: ["websocket", "polling"]
+});
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/health", (_, res) => res.status(200).send("OK"));
+
+io.on("connection", socket => {
+  console.log("New client connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
   });
+});
 
-  app.use(vite.middlewares);
-  app.use(cors());
-  app.use(express.json());
-  app.use(express.static(path.join(__dirname, 'dist')));
-
-  const httpServer = http.createServer(app);
-  const io = new Server(httpServer, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST']
-    },
-    path: '/socket.io',
-    transports: ['websocket', 'polling']
-  });
-
-  app.get('/health', (_, res) => res.status(200).send('OK'));
-
-  io.on('connection', socket => {
-    console.log('New client connected:', socket.id);
-    socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
-    });
-  });
-
-  httpServer.listen(PORT, () =>
-    console.log(`Server running on port ${PORT}`)
-  );
-}
-
-startServer();
+const PORT = process.env.PORT || 10000;
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
