@@ -24,4 +24,10 @@ export default defineConfig({
     strictPort: true,
   },
   envDir: '.',
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      input: 'index.html'
+    }
+  }
 });
