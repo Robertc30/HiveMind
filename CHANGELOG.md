@@ -22,3 +22,12 @@
   - Forced transport to `websocket`
   - Enabled wildcard CORS for initial testing
   - Added /health route and connection logs
+- Re-added explicit Socket.IO path and fallback "polling" transport on frontend for Render/Vercel compatibility
+
+## [Refactor]
+- Converted project to a unified full-stack app using Express + Vite middleware.
+- Served both the frontend and backend from the same Express server to eliminate CORS and WebSocket handshake issues.
+- Updated `server/server.js` to use Vite middleware.
+- Updated `package.json` to use `node server/server.js` as the dev script.
+- Removed use of `.env.VITE_SERVER_URL` throughout the project.
+- Updated `src/hooks/useSocket.ts` to connect to the root level.
