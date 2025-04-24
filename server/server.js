@@ -11,7 +11,8 @@ const io = new Server(httpServer, {
     origin: "*",
     methods: ["GET", "POST"]
   },
-  path: "/socket.io"
+  path: "/socket.io",
+  transports: ["websocket", "polling"]
 });
 
 app.use(cors());
