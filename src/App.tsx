@@ -1,23 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Room } from './types';
-import { useSocket } from './hooks/useSocket';
+import useSocket from './hooks/useSocket';
 import WelcomeScreen from './components/WelcomeScreen';
 import ChatRoom from './components/ChatRoom';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
-  
-  const {
-    connected,
-    messages,
-    users,
-    typingUsers,
-    isAiTyping,
-    joinRoom,
-    sendMessage,
-    setTyping,
-  } = useSocket();
+  const [connected, setConnected] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [typingUsers, setTypingUsers] = useState([]);
+  const [isAiTyping, setIsAiTyping] = useState(false);
+
+  useEffect(() => {
+    useSocket.on('connect', () => {
+      setConnected(true);
+    });
+
+    useSocket.on('disconnect', () => {
+      setConnected(false);
+    });
+
+    useSocket.on('messages', (newMessages) => {
+      setMessages(newMessages);
+    });
+
+    useSocket.on('users', (newUsers) => {
+      setUsers(newUsers);
+    });
+
+    useSocket.on('typingUsers', (newTypingUsers) => {
+      setTypingUsers(newTypingUsers);
+    });
+
+    useSocket.on('isAiTyping', (newIsAiTyping) => {
+      setIsAiTyping(newIsAiTyping);
+    });
+
+    return () => {
+      useSocket.off('connect');
+      useSocket.off('disconnect');
+      useSocket.off('messages');
+      useSocket.off('users');
+      useSocket.off('typingUsers');
+      useSocket.off('isAiTyping');
+    };
+  }, []);
+
+  const joinRoom = (roomId: string, user: User) => {
+    useSocket.emit('joinRoom', { roomId, user });
+  };
+
+  const sendMessage = (message: string) => {
+    useSocket.emit('sendMessage', message);
+  };
+
+  const setTyping = (typing: boolean) => {
+    useSocket.emit('typing', typing);
+  };
   
   const handleJoinRoom = (room: Room, user: User) => {
     setCurrentUser(user);
