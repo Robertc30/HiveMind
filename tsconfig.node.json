@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2020",
     "lib": ["ES2023"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
